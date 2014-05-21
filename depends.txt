@@ -1,0 +1,4 @@
+/bin/dmesg
+/bin/grep
+/usr/bin/curl
+/bin/cat
