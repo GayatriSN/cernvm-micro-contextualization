@@ -1,119 +1,120 @@
 #!/bin/sh
-#===========================
-#FOR:BUILD
-#===========================
 
-#require_versioned_package curl ${CURL_STRONG_VERSION}
-
-#===========================
-#FOR:RUN
-#===========================
-
-USER_DATA=/user-data
-UCONTEXT_TMP=/ucontext
-UCONTEXT_SRC="(none)"
-UCONTEXT_TIMEOUT=2
-UCONTEXT_TIMEOUT_DATA=10
-UCONTEXT_RETRIES=2
-
-fetch_vsphere() {
-  mkdir -p /context_mount
-  for P in $(cat /proc/partitions | tail -n+3 | awk '{print $4}' | sort); do
-    filesystem=$(blkid /dev/$P | grep -o TYPE=[^\ ]* | tr -d '"' | cut -d= -f2)
-    if [ "x$filesystem" = "xiso9660" ]; then
-      mount -o ro -t $filesystem /dev/$P /context_mount >/dev/null 2>&1
-      if [ $? -eq 0 ]; then
-        if cp /context_mount/user-data.txt ${USER_DATA} 2>/dev/null; then
-          UCONTEXT_SRC="vSphere"
-          umount /context_mount
-          break
-        fi
-        umount /context_mount
-      fi
-    fi
-  done
-  rmdir /context_mount
-}
-
-download_userdata() {
-  local server=$1
-  local url=$2
-  local meta_url=$3
-  local extra_header="$4"
-  local extra_header_opt=
-  [ "x${extra_header}" != "x" ] && extra_header_opt="-H"
-  local retval
-
-  nc -w ${UCONTEXT_TIMEOUT} $server 80 -e /bin/true > /dev/null 2>&1
-  if [ $? -eq 0 ]; then
-    if [ "x${extra_header}" != "x" ]; then
-      curl -f -s -o ${USER_DATA} ${extra_header_opt} "${extra_header}" --connect-timeout ${UCONTEXT_TIMEOUT_DATA} $url
-      retval=$?
-    else
-      curl -f -s -o ${USER_DATA} --connect-timeout ${UCONTEXT_TIMEOUT_DATA} $url
-      retval=$?
-    fi
-    if [ $retval -eq 0 ]; then
-      return 0
-    else
-      rm -f ${USER_DATA}
-    fi
-
-    # Check if there are meta-data but no user data
-    if [ "x$meta_url" != "x" ]; then
-      if [ "x${extra_header}" != "x" ]; then
-        curl -f -s -o ${USER_DATA} ${extra_header_opt} "${extra_header}" --connect-timeout ${UCONTEXT_TIMEOUT_DATA} $meta_url
-        retval=$?
+vmware_detect() {
+   # VMware uses CD-ROM contextualization
+   # Need to modify this function for VMware
+   if grep -q "VMware" dmesg.txt; then
+      curl -o /tmp/vmware-user-data http://1.2.3.4/user-data
+      if [ -f /tmp/vmware-user-data ]; then
+         return 0
       else
-        curl -f -s -o ${USER_DATA} --connect-timeout ${UCONTEXT_TIMEOUT_DATA} $meta_url
-        retval=$?
+         return 1
       fi
-      if [ $retval -eq 0 ]; then
-        cat /dev/null > ${USER_DATA}
-        return 0
+   else
+      return 1
+   fi
+}
+
+vmware_download() {
+   local USER_DATA=$1
+   mv /tmp/vmware-user-data $USER_DATA
+}
+
+vmware_cleanup() {
+   rm /tmp/vmware-user-data
+}
+
+gce_detect() {
+   if grep -q "Google" dmesg.txt; then
+      curl -o /tmp/gce-user-data http://169.254.169.254/computeMetaData/v1/
+      if [ -f /tmp/gce-user-data ]; then
+         return 0
       else
-        rm -f ${USER_DATA}
+         return 1
       fi
-    fi
-  fi
-  
-  # Failure
-  return 1
+   else
+      return 1
+   fi
 }
 
-fetch_ec2() {
-  download_userdata 169.254.169.254 \
-    http://169.254.169.254/latest/user-data \
-    http://169.254.169.254/latest/meta-data/ami-id
-  [ $? -eq 0 ] && UCONTEXT_SRC="EC2"
+gce_download() {
+   local USER_DATA=$1
+   mv /tmp/gce-user-data $USER_DATA
 }
 
+gce_cleanup() {
+   rm /tmp/gce-user-data
+}
 
-if [ ! -b "${ROOT_DEV}" ]; then
-	echo "Contextualizing VM..."
-	
-	#detecting environment using dmesg command
-	
-	dmesg | cat > output.txt
-	
-	if grep -q "VMware" output.txt; then
-        fetch_vsphere
-	elif grep -q "amazon" output.txt; then
-		fetch_ec2
-	fi
+amazon_detect() {
+   if grep -q "amazon" dmesg.txt; then
+      curl -o /tmp/amazon-user-data http://169.254.169.254/latest/user-data
+      if [ -f /tmp/amazon-user-data ]; then
+         return 0
+      else
+         return 1
+      fi
+   else
+      return 1
+   fi
+}
 
-	rm output.txt	
-	
-	if [ -f ${USER_DATA} ]; then
-		echo "Detected environment using command."
-	else
-		echo "Detection by command failed... Detecting using user-data availability..."
-		for data_source in vsphere ec2; do
-		[ -f ${USER_DATA} ] && break
-		fetch_${data_source}
-		done
-	fi
-  
-	echo ${UCONTEXT_SRC}
-fi
+amazon_download() {
+   local USER_DATA=$1
+   mv /tmp/amazon-user-data $USER_DATA
+}
 
+amazon_cleanup() {
+   rm /tmp/amazon-user-data
+}
+
+azure_detect() {
+
+   if grep -q "Microsoft" dmesg.txt; then
+
+      # The custom data is placed by the Azure Linux Agent in the /var/lib/waagent/
+      # at the time of VM creation. The Azure Linux Agent is installed at the time 
+      # of creation of VHD for deploying to Azure. The Data is in base 64 encoded
+      # format. 
+
+      mv /tmp/azure-user-data /var/lib/waagent/CustomData
+      if [ -f /tmp/azure-user-data ]; then
+         return 0
+      else
+         return 1
+      fi
+   else
+      return 1
+   fi
+}
+
+azure_download() {
+   local USER_DATA=$1
+   mv /tmp/azure-user-data $USER_DATA
+}
+
+azure_cleanup() {
+   rm /tmp/azure-user-data
+}
+
+USER_DATA="/tmp/user-data"
+PROVIDERS="amazon gce vmware azure"
+
+dmesg | cat > dmesg.txt
+
+for PROVIDER in $PROVIDERS; do
+   echo -n "Checking for $PROVIDER..."
+   if ${PROVIDER}_detect; then
+      echo "yes"
+      ${PROVIDER}_download ${USER_DATA}
+      ${PROVIDER}_cleanup
+      break
+   else
+      echo "no"
+      ${PROVIDER}_cleanup
+   fi
+done
+
+cat $USER_DATA
+
+rm dmesg.txt
