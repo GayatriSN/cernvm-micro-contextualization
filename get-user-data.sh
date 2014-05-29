@@ -97,10 +97,82 @@ azure_cleanup() {
    rm /tmp/azure-user-data
 }
 
-USER_DATA="/tmp/user-data"
-PROVIDERS="amazon gce vmware azure"
+opennebula_detect() {
+	# grep command here..
+	# User Data fetch here..
+	return 1
+}
 
-dmesg | cat > dmesg.txt
+opennebula_download() {
+   local USER_DATA=$1
+   mv /tmp/opennebula-user-data $USER_DATA
+}
+
+opennebula_cleanup() {
+	rm /tmp/opennebula-user-data
+}
+
+openstack_detect() { 
+	
+	#grep command here..
+	
+	#Added from 06context script: 
+	
+	local default_gateway=$(route | grep ^default | awk '{print $2}')
+	curl -o /tmp/openstack-user-data http://${default_gateway}/latest/user-data
+    if [ -f /tmp/openstack-user-data ]; then
+		return 0
+    else
+        return 1
+    fi 
+}
+
+openstack_download() {
+	local USER_DATA=$1
+    mv /tmp/openstack-user-data $USER_DATA
+}
+
+openstack_cleanup() {
+	rm /tmp/openstack-user-data
+}
+
+cloudstack_detect() {
+	#grep command here..
+	# To use curl we need to find out virtual router ip address
+	# this command is documented by cloudstack
+	# cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1
+	# but this the dchp lease file in a vm is found empty so we neet
+	# to find out alternative way
+	return 1
+}
+
+cloudstack_download() {
+   local USER_DATA=$1
+   mv /tmp/cloudstack-user-data $USER_DATA
+}
+
+cloudstack_cleanup() {
+	rm /tmp/cloudstack-user-data
+}
+
+rhevm_detect() {
+	#Method to detect RHE-V will be added here.. 
+	return 1
+}
+
+rhevm_download() {
+   local USER_DATA=$1
+   mv /tmp/rhevm-user-data $USER_DATA
+}
+
+rhevm_cleanup() {
+	rm /tmp/rhevm-user-data
+}
+
+USER_DATA="/tmp/user-data" 
+PROVIDERS="amazon gce vmware azure openstack cloudstack opennebula rhevm" 
+
+dmesg | cat > dmesg.txt 
 
 for PROVIDER in $PROVIDERS; do
    echo -n "Checking for $PROVIDER..."
