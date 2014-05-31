@@ -26,7 +26,12 @@ vmware_cleanup() {
 
 gce_detect() {
    if grep -q "Google" dmesg.txt; then
-      curl -o /tmp/gce-user-data http://169.254.169.254/computeMetaData/v1/
+	  
+	  # We need to request cernvm users to provide their startup script using the "startup-script" as key and the entire script as the value
+	  # in the custom meta-data section while launching the instance. This way we can use the URL below since the format is
+	  # http://metadata.google.internal/computeMetadata/v1/instance/attributes/key and it return the corresponding value
+	  
+      curl -o /tmp/gce-user-data -H "Metadata-Flavor:Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/startup-script
       if [ -f /tmp/gce-user-data ]; then
          return 0
       else
