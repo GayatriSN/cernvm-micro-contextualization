@@ -2,3 +2,4 @@
 /bin/grep
 /usr/bin/curl
 /bin/cat
+/usr/bin/awk
