@@ -1,0 +1,16 @@
+#!/bin/sh
+
+opennebula_detect() {
+	# grep command here..
+	# User Data fetch here..
+	return 1
+}
+
+opennebula_download() {
+   local USER_DATA=$1
+   mv /tmp/opennebula-user-data $USER_DATA
+}
+
+opennebula_cleanup() {
+	rm /tmp/opennebula-user-data
+}

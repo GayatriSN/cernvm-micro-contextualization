@@ -1,0 +1,26 @@
+#!/bin/sh
+
+openstack_detect() { 
+	
+	#grep command here..
+	
+	#Added from 06context script: 
+	
+	local default_gateway=$(route | grep ^default | awk '{print $2}')
+	curl -o /tmp/openstack-user-data http://${default_gateway}/latest/user-data
+    if [ -f /tmp/openstack-user-data ]; then
+		return 0
+    else
+        return 1
+    fi 
+}
+
+openstack_download() {
+	local USER_DATA=$1
+    mv /tmp/openstack-user-data $USER_DATA
+}
+
+openstack_cleanup() {
+	rm /tmp/openstack-user-data
+}
+

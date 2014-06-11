@@ -1,0 +1,25 @@
+#!/bin/sh
+
+vmware_detect() {
+   # VMware uses CD-ROM contextualization
+   # Need to modify this function for VMware
+   if grep -q "VMware" dmesg.txt; then
+      curl -o /tmp/vmware-user-data http://1.2.3.4/user-data
+      if [ -f /tmp/vmware-user-data ]; then
+         return 0
+      else
+         return 1
+      fi
+   else
+      return 1
+   fi
+}
+
+vmware_download() {
+   local USER_DATA=$1
+   mv /tmp/vmware-user-data $USER_DATA
+}
+
+vmware_cleanup() {
+   rm /tmp/vmware-user-data
+}

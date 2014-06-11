@@ -1,0 +1,30 @@
+#!/bin/sh
+
+azure_detect() {
+
+   if grep -q "Microsoft" dmesg.txt; then
+
+      # The custom data is placed by the Azure Linux Agent in the /var/lib/waagent/
+      # at the time of VM creation. The Azure Linux Agent is installed at the time 
+      # of creation of VHD for deploying to Azure. The Data is in base 64 encoded
+      # format. 
+
+      mv /tmp/azure-user-data /var/lib/waagent/CustomData
+      if [ -f /tmp/azure-user-data ]; then
+         return 0
+      else
+         return 1
+      fi
+   else
+      return 1
+   fi
+}
+
+azure_download() {
+   local USER_DATA=$1
+   mv /tmp/azure-user-data $USER_DATA
+}
+
+azure_cleanup() {
+   rm /tmp/azure-user-data
+}

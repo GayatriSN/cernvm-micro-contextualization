@@ -1,0 +1,24 @@
+#!/bin/sh
+
+amazon_detect() {
+   if grep -q "amazon" dmesg.txt; then
+      curl -o /tmp/amazon-user-data http://169.254.169.254/latest/user-data
+      if [ -f /tmp/amazon-user-data ]; then
+         return 0
+      else
+         return 1
+      fi
+   else
+      return 1
+   fi
+}
+
+amazon_download() {
+   local USER_DATA=$1
+   mv /tmp/amazon-user-data $USER_DATA
+}
+
+amazon_cleanup() {
+   rm /tmp/amazon-user-data
+}
+

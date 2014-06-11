@@ -1,0 +1,22 @@
+#!/bin/sh
+
+cloudstack_detect() {
+	#grep command here..
+	# To use curl we need to find out virtual router ip address
+	# this command is documented by cloudstack
+	# cat /var/lib/dhclient/dhclient-eth0.leases | grep dhcp-server-identifier | tail -1
+	# but this the dchp lease file in a vm is found empty so we neet
+	# to find out alternative way
+	return 1
+}
+
+cloudstack_download() {
+   local USER_DATA=$1
+   mv /tmp/cloudstack-user-data $USER_DATA
+}
+
+cloudstack_cleanup() {
+	rm /tmp/cloudstack-user-data
+}
+
+

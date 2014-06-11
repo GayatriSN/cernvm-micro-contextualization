@@ -1,0 +1,15 @@
+#!/bin/sh
+
+rhevm_detect() {
+	#Method to detect RHE-V will be added here.. 
+	return 1
+}
+
+rhevm_download() {
+   local USER_DATA=$1
+   mv /tmp/rhevm-user-data $USER_DATA
+}
+
+rhevm_cleanup() {
+	rm /tmp/rhevm-user-data
+}
