@@ -3,6 +3,7 @@
 openstack_detect() { 
 	
 	#grep command here..
+	if grep -q "OpenStack Nova" dmesg.txt; then
 	
 	#Added from 06context script: 
 	
@@ -13,6 +14,10 @@ openstack_detect() {
     else
         return 1
     fi 
+	
+	else 
+		return 1
+	fi
 }
 
 openstack_download() {
