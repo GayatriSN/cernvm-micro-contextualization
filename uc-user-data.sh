@@ -8,3 +8,5 @@ then
 else
         echo "File not compressed"
 fi
+
+rm com.txt
