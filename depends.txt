@@ -3,3 +3,5 @@
 /usr/bin/curl
 /bin/cat
 /usr/bin/awk
+/usr/bin/file
+/bin/gzip
