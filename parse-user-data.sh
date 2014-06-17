@@ -13,6 +13,8 @@ then
 	sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^--===============1341993424==$/p' ud | head -n -1 | tail -n +4 | cat > /tmp/ucernvm-data
 	#Saving the uncompressed data as is
 	cp ${USER_DATA} /var/lib/user-data
+	#Writing to scratch disk
+	cp ${USER_DATA} /root.rw/user-data
 	#removing temporary user-data
 	rm ud
 else
@@ -64,5 +66,8 @@ else
 
 	#Saving new cloud-init MIME-compatible user-data
 	cp mime-user-data /var/lib/user-data
+
+        #Writing to scratch disk
+        cp mime-user-data /root.rw/user-data
 fi
 
