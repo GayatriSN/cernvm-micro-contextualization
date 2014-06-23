@@ -14,6 +14,7 @@ for PROVIDER in provider.d/*; do
 
    if ${PROVIDER}_detect; then
       echo "yes"
+	  echo $PROVIDER | cat > /tmp/cloud-provider
       ${PROVIDER}_download ${USER_DATA}
       ${PROVIDER}_cleanup
       break
