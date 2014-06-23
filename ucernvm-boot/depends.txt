@@ -8,3 +8,5 @@
 /usr/bin/head
 /usr/bin/tail
 /bin/sed
+/bin/cp
+/bin/rm
