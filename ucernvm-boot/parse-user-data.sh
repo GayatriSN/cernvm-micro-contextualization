@@ -8,12 +8,10 @@ cp ${USER_DATA} ud
 if [ -s mimetest.txt ]
 then
 	echo "New Syntax Found"
-	sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^--===============1341993424==$/p' ud | head -n -1 | tail -n +4 | cat > /tmp/ucernvm-data
-	#Saving the uncompressed data as is
-	cp ${USER_DATA} /var/lib/user-data
-	#Writing to scratch disk
-	cp ${USER_DATA} /root.rw/user-data
-	#removing temporary user-data
+	sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^MIME-Version: 1.0$/p' ud | head -n -2 | tail -n +4 | cat > /tmp/ucernvm-data
+	#Leaving the uncompressed data as it is in /tmp/user-data
+	
+	#Removing temporary user-data
 	rm ud
 else
 	echo "Old Syntax Found"
