@@ -71,9 +71,12 @@ else
 	rm ud
 
 	#Saving new cloud-init MIME-compatible user-data
-	cp mime-user-data /var/lib/user-data
+	\cp mime-user-data /tmp/user-data
+	
+	#Removing the generated mime-user-data file
+	#since it is already copied to /tmp/user-data
+	rm mime-user-data
 
-        #Writing to scratch disk
-        cp mime-user-data /root.rw/user-data
+	
 fi
 
