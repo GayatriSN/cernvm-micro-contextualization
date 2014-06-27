@@ -63,7 +63,7 @@ INCLUSION_TYPES_MAP = {
     '#cloud-boothook': 'text/cloud-boothook',
     '#cloud-config-archive': 'text/cloud-config-archive',
     '#cloud-config-jsonp': 'text/cloud-config-jsonp',
-	'#amiconfig': 'text/amiconfig',
+    '#amiconfig': 'text/amiconfig',
 }
 
 # Sorted longest first
