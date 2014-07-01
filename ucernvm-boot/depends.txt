@@ -10,3 +10,4 @@
 /bin/sed
 /bin/cp
 /bin/rm
+/usr/bin/base64
