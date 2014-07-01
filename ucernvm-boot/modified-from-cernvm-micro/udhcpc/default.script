@@ -53,19 +53,19 @@ esac
 
 if [ -s /var/lib/dhcp/dhclient.leases]
 then
-	cat /var/lib/dhcp/dhclient.leases | awk -F '[;]' '{print $1}' | awk '{print $3}' | tail -1 | cat > /tmp/dhcpserver.txt
+	cat /var/lib/dhcp/dhclient.leases | awk -F '[;]' '{print $1}' | awk '{print $3}' | tail -1 | cat > /tmp/dhcpserver
 else
 	dhcpfile=$(ls -tr /var/lib/dhcp | tail -1)
-	grep "dhcp-server-identifier" /var/lib/dhcp/${dhcpfile} | awk -F '[;]' '{print $1}' | awk '{print $3}' | tail -1 | cat > /tmp/dhcpserver.txt
+	grep "dhcp-server-identifier" /var/lib/dhcp/${dhcpfile} | awk -F '[;]' '{print $1}' | awk '{print $3}' | tail -1 | cat > /tmp/dhcpserver
 fi
 
 #FOR LOGGING
 
-if [ -s /tmp/dhcpserver.txt ]
+if [ -s /tmp/dhcpserver ]
 then
 	echo "DHCP server found"
-	cat /tmp/dhcpserver.txt
-	rm /tmp/dhcpserver.txt
+	cat /tmp/dhcpserver
+	rm /tmp/dhcpserver
 else
 	echo "No DHCP server found"
 fi
