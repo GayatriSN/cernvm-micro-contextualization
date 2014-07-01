@@ -8,8 +8,14 @@ azure_detect() {
       # at the time of VM creation. The Azure Linux Agent is installed at the time 
       # of creation of VHD for deploying to Azure. The Data is in base 64 encoded
       # format. 
-
-      mv /tmp/azure-user-data /var/lib/waagent/CustomData
+	  
+	  # Added from azure-linux-agent.sh
+	  
+	  curl -o /tmp/temp-azure-data http://schemas.microsoft.com/windowsazure
+	  grep "CustomData" /tmp/temp-azure-data | awk -F'CustomData' '{print $2}' | cut -d'<' -f 1 | cut -d'>' -f 2 | cat > /tmp/azure-user-data
+	  
+	  # The decoding of base64 data is handled in <get/parse>-user-data.sh script
+	  
       if [ -f /tmp/azure-user-data ]; then
          return 0
       else
