@@ -65,7 +65,6 @@ if [ -s /tmp/dhcpserver ]
 then
 	echo "DHCP server found"
 	cat /tmp/dhcpserver
-	rm /tmp/dhcpserver
 else
 	echo "No DHCP server found"
 fi
