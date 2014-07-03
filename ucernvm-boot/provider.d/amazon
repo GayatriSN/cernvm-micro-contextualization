@@ -2,7 +2,7 @@
 
 amazon_detect() {
    if grep -q "amazon" dmesg.txt; then
-      curl -o /tmp/amazon-user-data http://169.254.169.254/latest/user-data
+      curl -f -s -o /tmp/amazon-user-data http://169.254.169.254/latest/user-data
       if [ -f /tmp/amazon-user-data ]; then
          return 0
       else
