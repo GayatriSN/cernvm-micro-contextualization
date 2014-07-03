@@ -5,7 +5,7 @@ gce_detect() {
 	  # in the custom meta-data section while launching the instance. This way we can use the URL below since the format is
 	  # http://metadata.google.internal/computeMetadata/v1/instance/attributes/key and it return the corresponding value
 
-      curl -f -s -o /tmp/gce-user-data -H "Metadata-Flavor:Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/startup-script
+      curl -f -s -o /tmp/gce-user-data -H "Metadata-Flavor:Google" --connect-timeout ${CONTEXT_TIMEOUT} http://metadata.google.internal/computeMetadata/v1/instance/attributes/startup-script
       if [ -f /tmp/gce-user-data ]; then
          return 0
       else

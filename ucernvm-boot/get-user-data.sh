@@ -1,6 +1,7 @@
 #!/bin/sh
 
 USER_DATA="/tmp/user-data" 
+CONTEXT_TIMEOUT=10
 
 dmesg | cat > dmesg.txt
 

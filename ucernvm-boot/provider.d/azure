@@ -11,7 +11,7 @@ azure_detect() {
 	  
 	  # Added from azure-linux-agent.sh
 	  
-	  curl -f -s -o /tmp/temp-azure-data http://schemas.microsoft.com/windowsazure
+	  curl -f -s -o /tmp/temp-azure-data --connect-timeout ${CONTEXT_TIMEOUT} http://schemas.microsoft.com/windowsazure
 	  grep "CustomData" /tmp/temp-azure-data | awk -F'CustomData' '{print $2}' | cut -d'<' -f 1 | cut -d'>' -f 2 | cat > /tmp/azure-user-data
 	  
 	  # The decoding of base64 data is handled in <get/parse>-user-data.sh script
