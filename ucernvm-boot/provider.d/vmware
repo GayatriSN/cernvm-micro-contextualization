@@ -4,12 +4,24 @@ vmware_detect() {
    # VMware uses CD-ROM contextualization
    # Need to modify this function for VMware
    if grep -q "VMware" dmesg.txt; then
-      curl -o /tmp/vmware-user-data http://1.2.3.4/user-data
-      if [ -f /tmp/vmware-user-data ]; then
-         return 0
-      else
-         return 1
-      fi
+	  mkdir -p /context_mount
+	  for P in $(cat /proc/partitions | tail -n+3 | awk '{print $4}' | sort); do
+		filesystem=$(blkid /dev/$P | grep -o TYPE=[^\ ]* | tr -d '"' | cut -d= -f2)
+		if [ "x$filesystem" = "xiso9660" ]; then
+		  mount -o ro -t $filesystem /dev/$P /context_mount >/dev/null 2>&1
+		  if [ $? -eq 0 ]; then
+			if cp /context_mount/user-data.txt /tmp/vmware-user-data 2>/dev/null; then
+			  umount /context_mount
+			  #Success
+			  return 0
+			fi
+			umount /context_mount
+		  fi
+		fi
+	  done
+	  rmdir /context_mount
+	  #Failure
+	  return 1
    else
       return 1
    fi
