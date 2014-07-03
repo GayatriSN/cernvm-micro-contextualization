@@ -3,7 +3,29 @@
 opennebula_detect() {
 	# grep command here..
 	# User Data fetch here..
-	return 1
+	
+	#Temporarily added from 06context file to keep this functional
+	#To be modified after "dmesg" command output can be used by grep
+
+  mkdir -p /context_mount
+  for P in $(cat /proc/partitions | tail -n+3 | awk '{print $4}' | sort); do
+    filesystem=$(blkid /dev/$P | grep -o TYPE=[^\ ]* | tr -d '"' | cut -d= -f2)
+    if [ "x$filesystem" = "xiso9660" -o "x$filesystem" = "xvfat" ]; then
+      mount -o ro -t $filesystem /dev/$P /context_mount >/dev/null 2>&1
+      if [ $? -eq 0 ]; then
+        if [ -f /context_mount/context.sh ]; then
+          ( source /context_mount/context.sh && echo ${EC2_USER_DATA} ) | base64 -d > /opennebula-user-data
+          umount /context_mount
+		  #Success
+          return 0
+        fi
+        umount /context_mount
+      fi
+    fi
+  done
+  rmdir /context_mount
+  #Failure
+  return 1
 }
 
 opennebula_download() {
