@@ -8,7 +8,7 @@ cloudstack_detect() {
 	
 	dhcpserver=$(cat /tmp/dhcpserver)
 	
-	curl -o /tmp/cloudstack-user-data http://${dhcpserver}/latest/user-data
+	curl -f -s -o /tmp/cloudstack-user-data http://${dhcpserver}/latest/user-data
 	
 	if [ -f /tmp/cloudstack-user-data ]; then
 		return 0
