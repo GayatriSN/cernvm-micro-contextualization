@@ -52,7 +52,7 @@ download() {
     [ -z "$FILE" ] && FILE="-"
 
     # Download checking certificates
-    curl --connect-timeout 10 -v ${F_CURL} ${CERT_CHECK} -o tempdatafile "$URL"
+    curl --connect-timeout 10 ${F_CURL} ${CERT_CHECK} -o tempdatafile "$URL"
     # Check for errors
     ANS=$?
     if [ $ANS -ne 0 ] && [ $SILENT -eq 0 ]; then
