@@ -1,0 +1,22 @@
+#!/bin/sh
+#===========================
+#FOR:BUILD
+#===========================
+ 
+require_package cloudinitpatch
+ 
+#===========================
+#FOR:RUN
+#===========================
+ 
+# Copy the package contents to the filesystem root
+
+# Execute seed-user-data.sh at startup, uses supported-providers-list
+
+cp –R /tmp/cloudinitpatch/seed-user-data.sh ${ROOT}/etc/init.d
+chmod +x ${ROOT}/etc/init.d/seed-user-data.sh
+cp –R /tmp/cloudinitpatch/supported-providers-list ${ROOT}/etc/init.d
+chmod +x ${ROOT}/etc/init.d/seed-user-data.sh
+
+# Copy __init__.py and amiconfig.py
+cp –R /tmp/cloudinitpatch/cloudinit/handlers/* ${ROOT}/usr/lib/python2.6/site-packages/cloudinit/handlers
