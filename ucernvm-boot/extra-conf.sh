@@ -4,5 +4,5 @@
 
 if [ "$PROVIDER" = "openstack" ];
 then
-	#echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+	echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 fi
