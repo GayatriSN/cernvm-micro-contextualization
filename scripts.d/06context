@@ -30,7 +30,7 @@ for PROVIDER in /etc/ucernvm-context/provider.d/*; do
 
    if ${PROVIDER}_detect; then
       echo "yes"
-	  echo $PROVIDER | cat > /tmp/cloud-provider
+	echo $PROVIDER | cat > /tmp/cloud-provider
       ${PROVIDER}_download ${USER_DATA}
       ${PROVIDER}_cleanup
       break
@@ -51,148 +51,158 @@ fi
 
 rm com.txt
 
-cat $USER_DATA
+# For Debug: 
+# cat $USER_DATA
 
 rm dmesg.txt
 
-#Check if the User Data are base 64 encoded. If yes, decode.
+echo "Reached 1"
 
-grep "MIME-Version" $USER_DATA | cat > testnew64
-
-if [ -s testnew64 ]
+if [ -s ${USER_DATA} ]
 then
-	echo "User Data in New Syntax and not base64 encoded"
-	rm testnew64
-else
-	grep "ucernvm" $USER_DATA | cat > test64
-	if [ ! -s test64 ]
+	  
+	#Check if the User Data are base 64 encoded. If yes, decode.
+	 
+	grep "MIME-Version" $USER_DATA | cat > testnew64
+	 
+	if [ -s testnew64 ]
 	then
-		grep "amiconfig" $USER_DATA | cat > test64
-        fi
-	if [ ! -s test64 ]
-        then
-                grep "cloud-config" $USER_DATA | cat > test64
-        fi
-	if [ ! -s test64 ]
-        then
-                grep "#\!/bin" $USER_DATA | cat > test64
-	fi
-
-        if [ ! -s test64 ]
-        then
-		echo "Input could be base64 encoded"
-		echo "Decoding user-data..."
-		base64 -d $USER_DATA | cat > new-user-data
-		if [ -s new-user-data ] 
-		then
-			echo "Data decoded successfully!"
-			cp new-user-data $USER_DATA
-			rm new-user-data
-		else
-			echo "Error in decoding data"
-		fi
+		echo "User Data in New Syntax and not base64 encoded"
+		rm testnew64
 	else
-		echo "User-Data in Old Syntax and not base64 encoded"
+		grep "ucernvm" $USER_DATA | cat > test64
+		if [ ! -s test64 ]
+		then
+			grep "amiconfig" $USER_DATA | cat > test64
+		fi
+		if [ ! -s test64 ]
+			then
+			grep "cloud-config" $USER_DATA | cat > test64
+		fi
+		if [ ! -s test64 ]
+			then
+			grep "#\!/bin" $USER_DATA | cat > test64
+		fi
+
+		if [ ! -s test64 ]
+		then
+			echo "Input could be base64 encoded"
+			echo "Decoding user-data..."
+			base64 -d $USER_DATA | cat > new-user-data
+			if [ -s new-user-data ] 
+			then
+				echo "Data decoded successfully!"
+				cp new-user-data $USER_DATA
+				rm new-user-data
+			else
+				echo "Error in decoding data"
+			fi
+		else
+			echo "User-Data in Old Syntax and not base64 encoded"
+		fi
+		rm test64
+		rm testnew64
 	fi
-	rm test64
-	rm testnew64
-fi
+	 
+	echo "reached 2"
+	# Step 2: Parsing User Data
+	 
+	grep "MIME" ${USER_DATA} | cat > mimetest.txt
+	 
+	#We create temporary copy of user-data file
+	cp ${USER_DATA} ud
+	 
+	if [ -s mimetest.txt ]
+	then
+		echo "New Syntax Found"
+		sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^MIME-Version: 1.0$/p' ud | head -n -2 | tail -n +4 | cat > /tmp/ucernvm-data
+		#Leaving the uncompressed data as it is in /tmp/user-data
+		
+		#Removing temporary user-data
+		rm ud
+	else
+		echo "Old Syntax Found"
+		#Extracting portion of ucernvm data
+		sed -n '/^\[ucernvm-begin\]$/,/^\[ucernvm-end\]$/p' ud | head -n -1 | tail -n +1 | cat > /tmp/ucernvm-data
 
-# Step 2: Parsing User Data
+		#Generating a cloud-init compatible MIME-Multipart
 
-grep "MIME" ${USER_DATA} | cat > mimetest.txt
+		#Since the source our mime file will always be cernvm the boundary value and the header
+		#in mime could be statically generated to avoid any additional dependencies or use of python
+		#These static files are stored in the mime-files folder
 
-#We create temporary copy of user-data file
-cp ${USER_DATA} ud
+		cp /etc/ucernvm-context/mime-files/main-mime-header mime-user-data
 
-if [ -s mimetest.txt ]
-then
-	echo "New Syntax Found"
-	sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^MIME-Version: 1.0$/p' ud | head -n -2 | tail -n +4 | cat > /tmp/ucernvm-data
-	#Leaving the uncompressed data as it is in /tmp/user-data
-	
-	#Removing temporary user-data
-	rm ud
+		#STARTUP SCRIPT SECTION
+		sed -n '/^#!\/bin\/sh$/,/^\[ucernvm-begin\]\|\[amiconfig\]\|#cloud-config$/p' ud | head -n -1 >> /tmp/startup-script
+		if [ -s /tmp/startup-script ]
+		then
+			echo "--===============1341993424==" >> mime-user-data
+			cat /etc/ucernvm-context/mime-files/startup-script-mime-header >> mime-user-data
+			cat /tmp/startup-script >> mime-user-data
+		fi
+		rm /tmp/startup-script
+
+		#UCERNVM SECTION
+		if [ -s /tmp/ucernvm-data ]
+		then
+			echo "--===============1341993424==" >> mime-user-data
+			cat /etc/ucernvm-context/mime-files/ucernvm-mime-header >> mime-user-data
+			cat /tmp/ucernvm-data >> mime-user-data
+		fi
+
+		#AMICONFIG SECTION
+		sed -n '/^\[amiconfig\]$/,/^#cloud-config\|\[ucernvm-begin\]$/p' ud | head -n -1 | tail -n +2 >> /tmp/amiconfig-data
+		if [ -s /tmp/amiconfig-data ]
+		then
+			echo "--===============1341993424==" >> mime-user-data
+			cat /etc/ucernvm-context/mime-files/amiconfig-mime-header >> mime-user-data
+			cat /tmp/amiconfig-data >> mime-user-data
+		fi
+		rm /tmp/amiconfig-data
+
+		#CLOUD-CONFIG SECTION
+		sed -n '/^#cloud-config$/,/^\[amiconfig\]\|\[ucernvm-begin\]$/p' ud | head -n -1 | tail -n +2 >> /tmp/cloud-config-data
+		if [ -s /tmp/cloud-config-data ]
+		then
+			echo "--===============1341993424==" >> mime-user-data
+			cat /etc/ucernvm-context/mime-files/cloud-config-mime-header >> mime-user-data
+			cat /tmp/cloud-config-data >> mime-user-data
+		fi
+		rm /tmp/cloud-config-data
+
+		#ENDING BOUNDARY
+		echo "--===============1341993424==--" >> mime-user-data
+
+		#Removing temporary user-data file
+		rm ud
+
+		#Saving new cloud-init MIME-compatible user-data
+		\cp mime-user-data /tmp/user-data
+		
+		#Removing the generated mime-user-data file
+		#since it is already copied to /tmp/user-data
+		rm mime-user-data
+		
+	fi
+	 
+	# Step 3: Sourcing the key=value pairs
+	 
+	UCONTEXT_TMP=/ucontext
+	 
+	while read line
+	do
+
+		#Added an intermediate grep to prevent displaying any input in invalid key=value format
+
+		echo "${line}" | grep "=" |  awk -F'[=]' '{print "_UCONTEXT_" $1 "=" $2}' >> ${UCONTEXT_TMP}
+
+	done < /tmp/ucernvm-data
+	 
+	#echo "Extracted key value pairs"
+	 
+	. ${UCONTEXT_TMP}
 else
-	echo "Old Syntax Found"
-	#Extracting portion of ucernvm data
-	sed -n '/^\[ucernvm-begin\]$/,/^\[ucernvm-end\]$/p' ud | head -n -1 | tail -n +1 | cat > /tmp/ucernvm-data
-
-	#Generating a cloud-init compatible MIME-Multipart
-
-	#Since the source our mime file will always be cernvm the boundary value and the header
-	#in mime could be statically generated to avoid any additional dependencies or use of python
-	#These static files are stored in the mime-files folder
-
-	cp /etc/ucernvm-context/mime-files/main-mime-header mime-user-data
-
-	#STARTUP SCRIPT SECTION
-	sed -n '/^#!\/bin\/sh$/,/^\[ucernvm-begin\]\|\[amiconfig\]\|#cloud-config$/p' ud | head -n -1 >> /tmp/startup-script
-	if [ -s /tmp/startup-script ]
-	then
-		echo "--===============1341993424==" >> mime-user-data
-                cat /etc/ucernvm-context/mime-files/startup-script-mime-header >> mime-user-data
-                cat /tmp/startup-script >> mime-user-data
-	fi
-	rm /tmp/startup-script
-
-	#UCERNVM SECTION
-	if [ -s /tmp/ucernvm-data ]
-	then
-		echo "--===============1341993424==" >> mime-user-data
-		cat /etc/ucernvm-context/mime-files/ucernvm-mime-header >> mime-user-data
-		cat /tmp/ucernvm-data >> mime-user-data
-	fi
-
-	#AMICONFIG SECTION
-	sed -n '/^\[amiconfig\]$/,/^#cloud-config\|\[ucernvm-begin\]$/p' ud | head -n -1 | tail -n +2 >> /tmp/amiconfig-data
-	if [ -s /tmp/amiconfig-data ]
-	then
-		echo "--===============1341993424==" >> mime-user-data
-		cat /etc/ucernvm-context/mime-files/amiconfig-mime-header >> mime-user-data
-		cat /tmp/amiconfig-data >> mime-user-data
-	fi
-	rm /tmp/amiconfig-data
-
-	#CLOUD-CONFIG SECTION
-	sed -n '/^#cloud-config$/,/^\[amiconfig\]\|\[ucernvm-begin\]$/p' ud | head -n -1 | tail -n +2 >> /tmp/cloud-config-data
-	if [ -s /tmp/cloud-config-data ]
-	then
-		echo "--===============1341993424==" >> mime-user-data
-		cat /etc/ucernvm-context/mime-files/cloud-config-mime-header >> mime-user-data
-		cat /tmp/cloud-config-data >> mime-user-data
-	fi
-	rm /tmp/cloud-config-data
-
-	#ENDING BOUNDARY
-	echo "--===============1341993424==--" >> mime-user-data
-
-	#Removing temporary user-data file
-	rm ud
-
-	#Saving new cloud-init MIME-compatible user-data
-	\cp mime-user-data /tmp/user-data
-	
-	#Removing the generated mime-user-data file
-	#since it is already copied to /tmp/user-data
-	rm mime-user-data
-	
+	echo "No User Data Provided"
 fi
-
-# Step 3: Sourcing the key=value pairs
-
-UCONTEXT_TMP=/ucontext
-
-while read line
-do
-
-	#Added an intermediate grep to prevent displaying any input in invalid key=value format
-
-	echo "${line}" | grep "=" |  awk -F'[=]' '{print "_UCONTEXT_" $1 "=" $2}' >> ${UCONTEXT_TMP}
-
-done < /tmp/ucernvm-data
-
-#echo "Extracted key value pairs"
-
-. ${UCONTEXT_TMP}
 
