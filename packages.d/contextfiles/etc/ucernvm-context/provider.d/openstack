@@ -10,6 +10,10 @@ openstack_detect() {
 	local default_gateway=$(route | grep ^default | awk '{print $2}')
 	curl -f -s -o /tmp/openstack-user-data --connect-timeout ${CONTEXT_TIMEOUT} http://${default_gateway}/latest/user-data
     if [ -f /tmp/openstack-user-data ]; then
+		
+		#Uncomment the following line to disable the zeroconf route. This will enable us to work with Openstack Metadata Service. 
+		#echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+		
 		return 0
     else
         return 1
