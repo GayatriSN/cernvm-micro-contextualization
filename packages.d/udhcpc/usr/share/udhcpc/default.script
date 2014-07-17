@@ -59,14 +59,4 @@ else
 	grep "dhcp-server-identifier" /var/lib/dhcp/${dhcpfile} | awk -F '[;]' '{print $1}' | awk '{print $3}' | tail -1 | cat > /tmp/dhcpserver
 fi
 
-#FOR LOGGING
-
-if [ -s /tmp/dhcpserver ]
-then
-	echo "DHCP server found"
-	cat /tmp/dhcpserver
-else
-	echo "No DHCP server found"
-fi
-
 exit 0
