@@ -16,15 +16,24 @@ require_package newpack
 # Execute seed-user-data.sh at startup, uses supported-providers-list
 
 #mkdir ${ROOT}/etc/rc.d/init.d
-cp /tmp/cloudinitpatch/seed-user-data ${ROOT}/etc/rc.d/init.d
-chmod 0744 ${ROOT}/etc/rc.d/init.d/seed-user-data
+cp /tmp/cloudinitpatch/seed-user-data ${ROOT}/etc/init.d
+chmod 0755 ${ROOT}/etc/init.d/seed-user-data
+
+#To execute chkconfig during system boot
+sed -i '$d' ${ROOT}/etc/init.d/iptables
+echo "chkconfig --add seed-user-data" >> ${ROOT}/etc/init.d/iptables
+echo 'exit $RETVAL' >> ${ROOT}/etc/init.d/iptables
 sed -i '$d' ${ROOT}/etc/init.d/cernvm
-echo "chkconfig --add seed-user-data" >> ${ROOT}/etc/init.d/cernvm
+echo "service seed-user-data start" >> ${ROOT}/etc/init.d/cernvm
 echo 'exit $RETVAL' >> ${ROOT}/etc/init.d/cernvm
 
+# Placing list in /var/lib
 cp /tmp/cloudinitpatch/supported-providers-list ${ROOT}/var/lib/
 
 # Copy __init__.py and amiconfig.py
 
 #mkdir -p ${ROOT}/usr/lib/python2.6/site-packages/cloudinit/handlers
 cp -R /tmp/cloudinitpatch/cloudinit/handlers/* ${ROOT}/usr/lib/python2.6/site-packages/cloudinit/handlers
+mkdir -p ${ROOT}/var/lib/cloud/handlers
+cp /tmp/cloudinitpatch/cloudinit/handlers/amiconfig.py ${ROOT}/var/lib/cloud/handlers/
+
