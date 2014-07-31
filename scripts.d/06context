@@ -130,7 +130,8 @@ then
 		cp /etc/ucernvm-context/mime-files/main-mime-header mime-user-data
 
 		#STARTUP SCRIPT SECTION
-		sed -n '/^#!\/bin\/sh$/,/^\[ucernvm-begin\]\|\[amiconfig\]\|#cloud-config$/p' ud | sed -e '$d' >> /tmp/startup-script
+		sed -n '/^#!\/bin\/sh$/,/^\[ucernvm-begin\]\|\[amiconfig\]\|#cloud-config$/p' ud >> /tmp/startup-script
+		sed -i '/\[ucernvm-begin\]\|\[amiconfig\]\|#cloud-config/d' /tmp/startup-script
 		if [ -s /tmp/startup-script ]
 		then
 			echo "--===============1341993424==" >> mime-user-data
@@ -148,7 +149,8 @@ then
 		fi
 
 		#AMICONFIG SECTION
-		sed -n '/^\[amiconfig\]$/,/^#cloud-config\|\[ucernvm-begin\]$/p' ud | sed -e '$d' >> /tmp/amiconfig-data
+		sed -n '/^\[amiconfig\]$/,/^#cloud-config\|\[ucernvm-begin\]$/p' ud | sed '1d' >> /tmp/amiconfig-data
+		sed -i '/#cloud-config\|\[ucernvm-begin\]/d' /tmp/amiconfig-data
 		if [ -s /tmp/amiconfig-data ]
 		then
 			echo "--===============1341993424==" >> mime-user-data
@@ -158,7 +160,8 @@ then
 		rm /tmp/amiconfig-data
 
 		#CLOUD-CONFIG SECTION
-		sed -n '/^#cloud-config$/,/^\[amiconfig\]\|\[ucernvm-begin\]$/p' ud | sed -e '$d' >> /tmp/cloud-config-data
+		sed -n '/^#cloud-config$/,/^\[amiconfig\]\|\[ucernvm-begin\]$/p' ud | sed '1d' >> /tmp/cloud-config-data
+		sed -i '/\[amiconfig\]\|\[ucernvm-begin\]/d' /tmp/cloud-config-data
 		if [ -s /tmp/cloud-config-data ]
 		then
 			echo "--===============1341993424==" >> mime-user-data
