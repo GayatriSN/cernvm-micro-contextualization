@@ -13,7 +13,14 @@ require_package contextfiles
 USER_DATA="/tmp/user-data" 
 CONTEXT_TIMEOUT=10
 
-dmesg | cat > dmesg.txt
+# Save the command output to determine the cloud-provider
+dmesg > dmesg.txt
+
+# User the provider scripts to identify the provider using
+# the provider specific keywords. If provider is identified
+# try to doenload the user-data and save it. Then clean up 
+# any temporary files generated and save the cloud-provider 
+# name for later use.
 
 for PROVIDER in /etc/ucernvm-context/provider.d/*; do
 
@@ -35,53 +42,58 @@ for PROVIDER in /etc/ucernvm-context/provider.d/*; do
    fi
 done
 
+# If no cloud provider is detected set the cloud provider to nocloud-net
+# This is useful during system boot for cloud init
+
 if [ ! -s /tmp/cloud-provider ]
 then
-	echo "nocloud-net" | cat > /tmp/cloud-provider
+	echo "nocloud-net" > /tmp/cloud-provider
 fi
 
+# Source the cloud provider name. (Required by 07extracontext)
 UCONTEXT_SRC=$(cat /tmp/cloud-provider)
 
-file /tmp/user-data* | grep "compressed" | cat > com.txt
+# CHeck if the user-data file is gzipped
+file /tmp/user-data* | grep "compressed" > com.txt
 
 if [ -s com.txt ]
 then
         gzip -d /tmp/user-data* 
 else
-        echo "File not compressed"
+	# Check if the user-data file is a zip archive
+	file /tmp/user-data* | grep "archive" > com.txt
+	if [ -s com.txt ]
+		then
+        	unzip /tmp/user-data*
+	else
+        	echo "File not compressed"
+	fi
 fi
 
+# Remove temporary files
 rm com.txt
-
 rm dmesg.txt
 
 if [ -s ${USER_DATA} ]
 then
 	#Check if the User Data are base 64 encoded. If yes, decode.
 
-	grep "MIME-Version" $USER_DATA | cat > testnew64
+	# New syntax is in MIME archive format.
+	grep "MIME-Version" $USER_DATA > testnew64
 
 	if [ -s testnew64 ]
 	then
 		echo "User Data in New Syntax and not base64 encoded"
 		rm testnew64
 	else
-		grep "ucernvm" $USER_DATA | cat > test64
-		if [ ! -s test64 ]
-		then
-			grep "amiconfig" $USER_DATA | cat > test64
-		fi
-		if [ ! -s test64 ]
-		then
-		        grep "cloud-config" $USER_DATA | cat > test64
-		fi
-		if [ ! -s test64 ]
-		then
-		        grep "#\!/bin" $USER_DATA | cat > test64
-		fi
+		# If not in new syntax, check for keywords found in the old syntax
+		grep -E "ucernvm|amiconfig|cloud-config|#\!/bin" $USER_DATA > test64
 
 		if [ ! -s test64 ]
 		then
+			# If no keywords from the new/old syntax are found, the data 
+			# could be base64 encoded. Try to decode the user-data.
+
 			echo "Input could be base64 encoded"
 			echo "Decoding user-data..."
 			base64 -d $USER_DATA | cat > new-user-data
@@ -101,8 +113,7 @@ then
 
 	#Parse User Data
 
-	#!/bin/sh
-
+	# After decoding the base64 data, check for syntax (new/old) 
 	grep "MIME" ${USER_DATA} | cat > mimetest.txt
 
 	#We create temporary copy of user-data file
@@ -111,21 +122,21 @@ then
 	if [ -s mimetest.txt ]
 	then
 		echo "New Syntax Found"
-		sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^MIME-Version: 1.0$/p' ud | sed '1,4d' | tac | sed '1,2d' | tac | cat > /tmp/ucernvm-data
-		#Leaving the uncompressed data as it is in /tmp/user-data
+		sed -n '/^Content-Type: text\/ucernvm; charset="us-ascii"$/,/^MIME-Version: 1.0$/p' ud | sed '1,4d' | tac | sed '1,2d' | tac > /tmp/ucernvm-data
+		# Leaving the uncompressed data as it is in /tmp/user-data
 	
-		#Removing temporary user-data
+		# Removing temporary user-data
 		rm ud
 	else
 		echo "Old Syntax Found"
-		#Extracting portion of ucernvm data
-		sed -n '/^\[ucernvm-begin\]$/,/^\[ucernvm-end\]$/p' ud | sed -e '1d' -e '$d' | cat > /tmp/ucernvm-data
+		# Extracting portion of ucernvm data
+		sed -n '/^\[ucernvm-begin\]$/,/^\[ucernvm-end\]$/p' ud | sed -e '1d' -e '$d' > /tmp/ucernvm-data
 
-		#Generating a cloud-init compatible MIME-Multipart
+		# Generating a cloud-init compatible MIME-Multipart
 
-		#Since the source our mime file will always be cernvm the boundary value and the header
-		#in mime could be statically generated to avoid any additional dependencies or use of python
-		#These static files are stored in the mime-files folder
+		# Since the source of our mime file will always be cernvm, the boundary value and the header
+		# in mime could be statically generated to avoid any additional dependencies or use of python
+		# These static files are stored in the mime-files folder
 
 		cp /etc/ucernvm-context/mime-files/main-mime-header mime-user-data
 
@@ -185,9 +196,7 @@ then
 	
 	fi
 
-	# Extract key values
-
-	#!/bin/sh
+	# Extract key values pairs and Source them
 
 	UCONTEXT_TMP="/tmp/ucontext"
 	touch ${UCONTEXT_TMP}
