@@ -8,6 +8,9 @@
 #FOR:RUN
 #===========================
 
+# Save the user-data, cloud provider and the dhcpserver
+# for reuse in the system boot stage
+
 cp /tmp/user-data ${ROOT}/var/lib/micro-user-data
 cp /tmp/cloud-provider ${ROOT}/var/lib/micro-cloud-provider
 cp /tmp/dhcpserver ${ROOT}/var/lib/dhcpserver
