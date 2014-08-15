@@ -8,21 +8,28 @@ RETVAL=0
 start() {
 	echo "Seeding User Data and Meta Data..." 
 
+	# Path to cloud-provider file from micro boot stage
 	providerfile="/var/lib/micro-cloud-provider"
 
+	# If no cloud-provider was detected, set provider to nocloud-net
 	if [ ! -s ${providerfile} ]
 	then
-		echo "nocloud-net" | cat > ${providerfile}
+		echo "nocloud-net" > ${providerfile}
 	fi
 
 	PROVIDER=$(cat $providerfile)
 
+	# Check if the cloud-provider is supported by both ucernvm-bootloader and cloudinit
+	# This is necessary because we create the seed directory named after the cloud -
+	# provider in /var/lib/cloud/seed/ directory
+	
 	cat /var/lib/supported-providers-list | grep ${PROVIDER} | cat > provider-check.txt
 
 	if [ -s provider-check.txt ]
 	then
 		echo "Provider supported by both cloud-init and micro-bootloader"
 	else
+		# If not supported by both, set provider to nocloud-net
 		PROVIDER="nocloud-net"
 		echo "Cloud Provider not supported by both"
 		echo "Setting provider to nocloud-net..."
@@ -30,17 +37,22 @@ start() {
 	
 	rm provider-check.txt
 
+	# Provider specific seed directory
 	SEED_DIR="/var/lib/cloud/seed/${PROVIDER}"
 
+	# Make seed directory 
 	mkdir -p ${SEED_DIR} 
 
+	# Seed user-data to seed directory
 	cp /var/lib/micro-user-data ${SEED_DIR}/user-data
 
-	cat ${SEED_DIR}/user-data
+	#cat ${SEED_DIR}/user-data
 
-	#Creating a dummy meta-data file until a proper meta-data fetching utility is implemented
-
-	echo "Sample meta-data" | cat > ${SEED_DIR}/meta-data
+	# Creating a dummy meta-data file until a proper meta-data fetching utility is implemented
+	# this is necessary because we need to seed both user-data and meta-data to override the
+	# Cloud init user-data fetch loop.
+	
+	echo "Sample meta-data" > ${SEED_DIR}/meta-data
 
 	return 0
 }
