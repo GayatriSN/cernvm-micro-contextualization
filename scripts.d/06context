@@ -16,9 +16,9 @@ CONTEXT_TIMEOUT=10
 # Save the command output to determine the cloud-provider
 dmesg > dmesg.txt
 
-# User the provider scripts to identify the provider using
+# Use the provider scripts to identify the provider using
 # the provider specific keywords. If provider is identified
-# try to doenload the user-data and save it. Then clean up 
+# try to download the user-data and save it. Then clean up 
 # any temporary files generated and save the cloud-provider 
 # name for later use.
 
@@ -32,7 +32,7 @@ for PROVIDER in /etc/ucernvm-context/provider.d/*; do
 
    if ${PROVIDER}_detect; then
       echo "yes"
-	  echo $PROVIDER | cat > /tmp/cloud-provider
+	  echo $PROVIDER > /tmp/cloud-provider
       ${PROVIDER}_download ${USER_DATA}
       ${PROVIDER}_cleanup
       break
@@ -53,7 +53,7 @@ fi
 # Source the cloud provider name. (Required by 07extracontext)
 UCONTEXT_SRC=$(cat /tmp/cloud-provider)
 
-# CHeck if the user-data file is gzipped
+# Check if the user-data file is gzipped
 file /tmp/user-data* | grep "compressed" > com.txt
 
 if [ -s com.txt ]
@@ -83,7 +83,7 @@ then
 
 	if [ -s testnew64 ]
 	then
-		echo "User Data in New Syntax and not base64 encoded"
+		echo "User Data is in New Syntax and not base64 encoded"
 		rm testnew64
 	else
 		# If not in new syntax, check for keywords found in the old syntax
@@ -106,7 +106,7 @@ then
 				echo "Error in decoding data"
 			fi
 		else
-			echo "User-Data in Old Syntax and not base64 encoded"
+			echo "User-Data is in Old Syntax and not base64 encoded"
 		fi
 		rm test64
 	fi
@@ -114,7 +114,7 @@ then
 	#Parse User Data
 
 	# After decoding the base64 data, check for syntax (new/old) 
-	grep "MIME" ${USER_DATA} | cat > mimetest.txt
+	grep "MIME" ${USER_DATA} > mimetest.txt
 
 	#We create temporary copy of user-data file
 	cp ${USER_DATA} ud
@@ -203,14 +203,16 @@ then
 
 	while read line
 	do
-		#Displaying key-value pairs on STD_OUT
-		#Added an intermediate grep to prevent displaying any input in invalid key=value format
+		#Adding key-value pairs to temporary context file
+		#Added an intermediate grep to prevent parsing any input in invalid key=value format
 
 		echo "${line}" | grep "=" |  awk -F'[=]' '{print "_UCONTEXT_" $1 "=" $2}' >> ${UCONTEXT_TMP}
 
 	done < /tmp/ucernvm-data
 	cat ${UCONTEXT_TMP}
 	echo "Extracted key value pairs"
+	
+	# Sourcing the key-value pairs from temporary file
 	. ${UCONTEXT_TMP}
 else
 	echo "No user data found"
