@@ -49,7 +49,7 @@ case "$1" in
 esac
 
 # This section saves the IP address of the DHCP server in a file
-# Used by cloudstack_download script for contextualization 
+# Used by cloudstack_download script for contextualization   
 
 if [ -s /var/lib/dhcp/dhclient.leases]
 then

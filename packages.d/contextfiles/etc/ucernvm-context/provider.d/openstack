@@ -11,7 +11,7 @@ openstack_detect() {
 		
 		if [ -f /tmp/openstack-user-data ]; then
 			
-			#Uncomment the following line to disable the zeroconf route. This will enable us to work with Openstack Metadata Service. 
+			#Uncomment the following line to disable the zeroconf route. This will enable us to work with Openstack Metadata Service.  
 			#echo "NOZEROCONF=yes" >> /etc/sysconfig/network
 			return 0
 		else

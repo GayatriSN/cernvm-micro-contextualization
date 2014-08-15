@@ -16,7 +16,7 @@ CONTEXT_TIMEOUT=10
 # Save the command output to determine the cloud-provider
 dmesg > dmesg.txt
 
-# Use the provider scripts to identify the provider using
+# Use the provider scripts to identify the provider using 
 # the provider specific keywords. If provider is identified
 # try to download the user-data and save it. Then clean up 
 # any temporary files generated and save the cloud-provider 

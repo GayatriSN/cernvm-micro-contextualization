@@ -21,7 +21,7 @@ start() {
 
 	# Check if the cloud-provider is supported by both ucernvm-bootloader and cloudinit
 	# This is necessary because we create the seed directory named after the cloud -
-	# provider in /var/lib/cloud/seed/ directory
+	# provider in /var/lib/cloud/seed/ directory 
 	
 	cat /var/lib/supported-providers-list | grep ${PROVIDER} | cat > provider-check.txt
 

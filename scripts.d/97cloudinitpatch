@@ -10,7 +10,7 @@ require_package cloudinitpatch
 #FOR:RUN
 #===========================
  
-# Copy the package contents to the filesystem root
+# Copy the package contents to the filesystem root 
 
 # Execute seed-user-data.sh at startup, uses supported-providers-list
 
