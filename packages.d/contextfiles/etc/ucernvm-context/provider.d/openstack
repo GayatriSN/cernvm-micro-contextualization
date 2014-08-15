@@ -1,24 +1,22 @@
 #!/bin/sh
 
 openstack_detect() { 
-	
-	#grep command here..
+
 	if grep -q "OpenStack Nova" dmesg.txt; then
-	
-	#Added from 06context script: 
-	
-	local default_gateway=$(route | grep ^default | awk '{print $2}')
-	curl -f -s -o /tmp/openstack-user-data --connect-timeout ${CONTEXT_TIMEOUT} http://${default_gateway}/latest/user-data
-    if [ -f /tmp/openstack-user-data ]; then
 		
-		#Uncomment the following line to disable the zeroconf route. This will enable us to work with Openstack Metadata Service. 
-		#echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+		#Added from 06context script: 
 		
-		return 0
-    else
-        return 1
-    fi 
-	
+		local default_gateway=$(route | grep ^default | awk '{print $2}')
+		curl -f -s -o /tmp/openstack-user-data --connect-timeout ${CONTEXT_TIMEOUT} http://${default_gateway}/latest/user-data
+		
+		if [ -f /tmp/openstack-user-data ]; then
+			
+			#Uncomment the following line to disable the zeroconf route. This will enable us to work with Openstack Metadata Service. 
+			#echo "NOZEROCONF=yes" >> /etc/sysconfig/network
+			return 0
+		else
+			return 1
+	        fi 
 	else 
 		return 1
 	fi
@@ -26,7 +24,7 @@ openstack_detect() {
 
 openstack_download() {
 	local USER_DATA=$1
-    mv /tmp/openstack-user-data $USER_DATA
+	mv /tmp/openstack-user-data $USER_DATA
 }
 
 openstack_cleanup() {
