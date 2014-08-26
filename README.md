@@ -4,7 +4,7 @@ cernvm-micro-contextualization
 'Streamline CernVM Contextualization Plug-ins' Project Repository
 
 Syntax for Contextualization
-==============================
+----------------------------
 
 Use the MIME multipart archive for providing user data. It could be base64 encoded and compressed to fit the user data within the cloud-provider limits.
 
